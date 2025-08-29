@@ -1,16 +1,17 @@
 -- modified cordic by rey
--- Version 5.0: Added a global 'enable' signal to control pipeline operation.
+-- Version 6.0: Added 'flag_co' output to signal when Yout is valid.
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 entity pipelineCORDIC is
     port (
-        clk    : in  std_logic;
-        enable : in  std_logic; -- Pipeline runs only when this is '1'
-        reset  : in  std_logic;
-        angle  : in  signed(31 downto 0);
-        Yout   : out signed(7 downto 0)
+        clk     : in  std_logic;
+        enable  : in  std_logic; -- Pipeline runs only when this is '1'
+        reset   : in  std_logic;
+        angle   : in  signed(31 downto 0);
+        Yout    : out signed(7 downto 0);
+        flag_co : out std_logic  -- NEW: '1' when Yout is valid
     );
 end pipelineCORDIC;
 
@@ -41,10 +42,37 @@ architecture behavioral of pipelineCORDIC is
     signal X, Y      : XY := (others => (others => '0'));
     signal Z         : type_Z := (others => (others => '0'));
     
+    -- NEW: Shift register to create the valid flag
+    signal valid_pipeline_reg : std_logic_vector(0 to 15);
+
 begin
     -- Quadrant detection is combinational, always active
     quadrant <= std_logic_vector(angle(31 downto 30));
     
+    -- This process creates a 16-stage shift register for the valid flag.
+    -- The 'enable' signal travels through this register, perfectly in sync
+    -- with the data traveling through the main CORDIC pipeline.
+    valid_flag_proc : process(clk)
+    begin
+        if rising_edge(clk) then
+            if reset = '1' then
+                valid_pipeline_reg <= (others => '0');
+            elsif enable = '1' then
+                -- Shift the flag one stage to the right
+                valid_pipeline_reg(1 to 15) <= valid_pipeline_reg(0 to 14);
+                -- A '1' enters the pipeline whenever a new calculation starts
+                valid_pipeline_reg(0) <= '1';
+            else
+                -- If not enabled, keep shifting zeros to flush the pipeline
+                valid_pipeline_reg(1 to 15) <= valid_pipeline_reg(0 to 14);
+                valid_pipeline_reg(0) <= '0';
+            end if;
+        end if;
+    end process valid_flag_proc;
+
+    -- The output flag is the signal that has completed its journey
+    flag_co <= valid_pipeline_reg(15);
+
     -- Process for Stage 0 (Initialization)
     process(clk)
     begin
@@ -53,7 +81,6 @@ begin
                 X(0) <= (others => '0');
                 Y(0) <= (others => '0');
                 Z(0) <= (others => '0');
-            -- Only load new data or run if enable is '1'
             elsif enable = '1' then
                 case quadrant is
                     when "00" | "11" =>
@@ -74,7 +101,6 @@ begin
                         Z(0) <= (others => '0');
                 end case;
             end if;
-            -- If enable is '0', the registers will hold their previous value.
         end if;
     end process;
     
@@ -87,7 +113,6 @@ begin
                     X(i+1) <= (others => '0');
                     Y(i+1) <= (others => '0');
                     Z(i+1) <= (others => '0');
-                -- Only advance the pipeline if enable is '1'
                 elsif enable = '1' then
                     case Z(i)(31) is
                         when '1' => 
@@ -110,7 +135,6 @@ begin
         if rising_edge(clk) then
             if reset = '1' then
                 Yout <= (others => '0');
-            -- Only update the output register if enable is '1'
             elsif enable = '1' then
                 Yout <= Y(15)(16 downto 9);
             end if;
