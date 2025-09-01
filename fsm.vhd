@@ -34,7 +34,7 @@ entity fsm is
 end fsm;
 
 architecture behavioral of fsm is
-    type state_type is (IDLE, WAIT_START, PREP, PROCESS, WAIT_CORDIC, WRITE_REG, READ_REG, TX, WAIT_TX_DONE, DONE);
+    type state_type is (IDLE, WAIT_START, PREP, PROCESSING, WAIT_CORDIC, WRITE_REG, READ_REG, TX, WAIT_TX_DONE, DONE);
     signal current_state, next_state : state_type;
 
     -- Output registers
@@ -65,7 +65,7 @@ begin
     -- State register
     process(clk, reset_btn)
     begin
-        if reset_btn = '1' then
+        if reset_btn = '0' then -- tombol reset ditekan (active low)
             current_state <= IDLE;
         elsif rising_edge(clk) then
             current_state <= next_state;
@@ -94,7 +94,7 @@ begin
 
             when WAIT_START =>
                 -- Wait for user to press start
-                if start_btn = '1' then
+                if start_btn = '0' then -- tombol start ditekan (active low)
                     -- Reset/enable all modules as needed
                     res_A_reg <= '1'; res_B_reg <= '1'; res_co_reg <= '1';
                     res_E_reg <= '1'; res_D_reg <= '1'; res_re_reg <= '1';
@@ -109,9 +109,9 @@ begin
                 res_E_reg <= '0'; en_E_reg <= '1';
                 res_D_reg <= '0'; en_D_reg <= '1';
                 res_re_reg <= '0'; en_re_reg <= '1';
-                next_state <= PROCESS;
+                next_state <= PROCESSING;
 
-            when PROCESS =>
+            when PROCESSING =>
                 -- Wait for CORDIC pipeline to produce first valid output
                 if flag_co = '1' then
                     next_state <= WRITE_REG;
@@ -150,3 +150,6 @@ begin
             when others =>
                 next_state <= IDLE;
         end case;
+    end process;
+
+end behavioral;
