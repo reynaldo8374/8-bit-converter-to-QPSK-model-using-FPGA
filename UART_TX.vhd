@@ -21,11 +21,11 @@ entity UART_TX is
     );
   port (
     i_Clk       : in  std_logic;
-    i_TX_DV     : in  std_logic;
+    i_TX_DV     : in  std_logic; -- if high, data transmit, like a trigger
     i_TX_Byte   : in  std_logic_vector(7 downto 0);
-    o_TX_Active : out std_logic;
-    o_TX_Serial : out std_logic;
-    o_TX_Done   : out std_logic
+    o_TX_Active : out std_logic; -- goes high when transmitting (busy)
+    o_TX_Serial : out std_logic; -- UART transmit serial data (output pin)
+    o_TX_Done   : out std_logic -- goes high for one clock cycle when transmit is done
     );
 end UART_TX;
  
