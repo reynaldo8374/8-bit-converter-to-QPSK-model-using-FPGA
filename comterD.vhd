@@ -16,18 +16,25 @@ end comterD;
 architecture rtl of comterD is
     constant COMP_VAL: unsigned(8 downto 0) := to_unsigned(360, 9);
     signal count : unsigned(8 downto 0) := (others => '0');
+    signal enabled_last : std_logic := '0';
 begin
     process(clk, rst)
     begin
         if rst = '1' then
             count <= (others => '0');
+            enabled_last <= '0';
         elsif rising_edge(clk) then
             if enable = '1' then
-                count <= count + 1;
+                if enabled_last = '1' then
+                    count <= count + 1;
+                end if;
+                enabled_last <= '1';
+            else
+                enabled_last <= '0';
             end if;
         end if;
     end process;
 
     counter <= count;
     flag <= '1' when count = COMP_VAL else '0';
-end
+end rtl;
