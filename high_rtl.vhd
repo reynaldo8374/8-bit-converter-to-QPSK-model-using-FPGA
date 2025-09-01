@@ -9,7 +9,8 @@ entity high_rtl is
         reset_btn     : in  std_logic;
         start_btn     : in  std_logic;
         i_RX_Serial   : in  std_logic;
-        o_TX_Serial   : out std_logic
+        o_TX_Serial   : out std_logic;
+        calc_led      : out std_logic  -- New LED output to show calculation status
     );
 end high_rtl;
 
@@ -59,11 +60,14 @@ architecture structural of high_rtl is
     -- register file
     signal regfile_data_out : signed(7 downto 0);
 
+    -- New signal for LED control
+    signal is_calculating : std_logic;
+
 begin
 
     -- UART RX
     uart_rx_inst: entity work.UART_RX
-        generic map (g_CLKS_PER_BIT => 115) -- Set as needed
+        generic map (g_CLKS_PER_BIT => 869) -- Set as needed
         port map (
             i_Clk       => clk,
             i_RX_Serial => i_RX_Serial,
@@ -73,7 +77,7 @@ begin
 
     -- UART TX
     uart_tx_inst: entity work.UART_TX
-        generic map (g_CLKS_PER_BIT => 115) -- Set as needed
+        generic map (g_CLKS_PER_BIT => 869) -- Set as needed
         port map (
             i_Clk       => clk,
             i_TX_DV     => tx_dv,
@@ -200,5 +204,25 @@ begin
 
     -- TX data selection (from register file)
     tx_data <= std_logic_vector(regfile_data_out);
+
+    -- Add LED control logic
+    process(clk)
+    begin
+        if rising_edge(clk) then
+            if reset_btn = '1' then
+                is_calculating <= '0';
+            else
+                -- Set calculating flag when in processing states
+                if (en_A = '1' or en_B = '1' or en_co = '1' or en_D = '1' or en_E = '1') then
+                    is_calculating <= '1';
+                else
+                    is_calculating <= '0';
+                end if;
+            end if;
+        end if;
+    end process;
+
+    -- Assign LED output
+    calc_led <= is_calculating;
 
 end structural;
