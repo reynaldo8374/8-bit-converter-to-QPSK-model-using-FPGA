@@ -37,7 +37,7 @@ begin
     end process write_process;
 
     -- Asynchronous read with address protection
-    process(all)
+    process(read_addr, memory_reg)
     begin
         if to_integer(unsigned(read_addr)) >= 0 and to_integer(unsigned(read_addr)) <= 359 then
             data_out <= memory_reg(to_integer(unsigned(read_addr)));
