@@ -43,7 +43,7 @@ architecture behavioral of pipelineCORDIC is
     signal Z         : type_Z := (others => (others => '0'));
     
     -- NEW: Shift register to create the valid flag
-    signal valid_pipeline_reg : std_logic_vector(0 to 15);
+    signal valid_pipeline_reg : std_logic_vector(0 to 15); --16 bit
 
 begin
     -- Quadrant detection is combinational, always active
@@ -55,14 +55,14 @@ begin
     valid_flag_proc : process(clk)
     begin
         if rising_edge(clk) then
-            if reset = '1' then
-                valid_pipeline_reg <= (others => '0');
-            elsif enable = '1' then
+            if reset = '1' then 
+                valid_pipeline_reg <= (others => '0'); -- valid_pipeline_reg = (0,0,0,...,0)
+            elsif enable = '1' then 
                 -- Shift the flag one stage to the right
-                valid_pipeline_reg(1 to 15) <= valid_pipeline_reg(0 to 14);
+                valid_pipeline_reg(1 to 15) <= valid_pipeline_reg(0 to 14); -- 15 bit move to left
                 -- A '1' enters the pipeline whenever a new calculation starts
-                valid_pipeline_reg(0) <= '1';
-            else
+                valid_pipeline_reg(0) <= '1'; -- add 1 at the start of the pipeline
+            else -- enable = '0'
                 -- If not enabled, keep shifting zeros to flush the pipeline
                 valid_pipeline_reg(1 to 15) <= valid_pipeline_reg(0 to 14);
                 valid_pipeline_reg(0) <= '0';
