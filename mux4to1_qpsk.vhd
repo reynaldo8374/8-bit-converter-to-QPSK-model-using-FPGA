@@ -15,13 +15,13 @@ begin
     begin
         case Sel is
             when "00" =>
-                Data <= to_signed(16#20000000#, 32); -- 45 deg
+                Data <= "00100000000000000000000000000000"; -- 45 deg
             when "01" =>
-                Data <= to_signed(16#60000000#, 32); -- 135 deg
+                Data <= "01100000000000000000000000000000"; -- 135 deg
             when "10" =>
-                Data <= to_signed(16#A0000000#, 32); -- 225 deg
+                Data <= "10100000000000000000000000000000"; -- 225 deg
             when others =>
-                Data <= to_signed(16#E0000000#, 32); -- 315 deg
+                Data <= "11100000000000000000000000000000"; -- 315 deg
         end case;
     end process;
 end rtl;
