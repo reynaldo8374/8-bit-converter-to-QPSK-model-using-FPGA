@@ -10,7 +10,8 @@ entity high_rtl is
         start_btn     : in  std_logic;
         i_RX_Serial   : in  std_logic;
         o_TX_Serial   : out std_logic;
-        calc_led      : out std_logic  -- New LED output to show calculation status
+        rx_led        : out std_logic;  -- LED RX aktif
+        tx_led        : out std_logic   -- LED TX aktif
     );
 end high_rtl;
 
@@ -54,14 +55,11 @@ architecture structural of high_rtl is
     signal flag_D          : std_logic;
 
     -- comterE (register read address)
-    signal comterE_counter : unsigned(31 downto 0);
+    signal comterE_counter : unsigned(8 downto 0);
     signal flag_E          : std_logic;
 
     -- register file
     signal regfile_data_out : signed(7 downto 0);
-
-    -- New signal for LED control
-    signal is_calculating : std_logic;
 
 begin
 
@@ -205,24 +203,10 @@ begin
     -- TX data selection (from register file)
     tx_data <= std_logic_vector(regfile_data_out);
 
-    -- Add LED control logic
-    process(clk)
-    begin
-        if rising_edge(clk) then
-            if reset_btn = '1' then
-                is_calculating <= '0';
-            else
-                -- Set calculating flag when in processing states
-                if (en_A = '1' or en_B = '1' or en_co = '1' or en_D = '1' or en_E = '1') then
-                    is_calculating <= '1';
-                else
-                    is_calculating <= '0';
-                end if;
-            end if;
-        end if;
-    end process;
+    -- LED RX aktif: menyala saat RX_DV high
+    rx_led <= rx_dv;
 
-    -- Assign LED output
-    calc_led <= is_calculating;
+    -- LED TX aktif: menyala saat TX aktif
+    tx_led <= tx_active;
 
 end structural;
