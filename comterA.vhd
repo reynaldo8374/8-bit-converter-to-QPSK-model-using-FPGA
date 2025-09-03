@@ -15,21 +15,14 @@ end comterA;
 
 architecture rtl of comterA is
     signal count : unsigned(1 downto 0) := (others => '0');
-    signal enabled_last : std_logic := '0';
 begin
     process(clk, rst)
     begin
         if rst = '1' then
             count <= (others => '0');
-            enabled_last <= '0';
         elsif rising_edge(clk) then
             if enable = '1' then
-                if enabled_last = '1' then
-                    count <= count + 1;
-                end if;
-                enabled_last <= '1';
-            else
-                enabled_last <= '0';
+                count <= count + 1;
             end if;
         end if;
     end process;

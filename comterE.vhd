@@ -1,4 +1,3 @@
--- comterD: Counter with 1-bit increment and comparator for decimal 360
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
@@ -16,21 +15,14 @@ end comterE;
 architecture rtl of comterE is
     constant COMP_VAL: unsigned(8 downto 0) := to_unsigned(360, 9);
     signal count : unsigned(8 downto 0) := (others => '0');
-    signal enabled_last : std_logic := '0';
 begin
     process(clk, rst)
     begin
         if rst = '1' then
             count <= (others => '0');
-            enabled_last <= '0';
         elsif rising_edge(clk) then
             if enable = '1' then
-                if enabled_last = '1' then
-                    count <= count + 1;
-                end if;
-                enabled_last <= '1';
-            else
-                enabled_last <= '0';
+                count <= count + 1;
             end if;
         end if;
     end process;
