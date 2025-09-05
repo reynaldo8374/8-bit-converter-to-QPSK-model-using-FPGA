@@ -78,5 +78,6 @@ set_location_assignment PIN_115 -to i_RX_Serial
 set_location_assignment PIN_114 -to o_TX_Serial
 set_location_assignment PIN_88 -to reset_btn
 set_location_assignment PIN_89 -to start_btn
-set_location_assignment PIN_87 -to calc_led
+set_location_assignment PIN_87 -to rx_led
+set_location_assignment PIN_85 -to tx_led
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
