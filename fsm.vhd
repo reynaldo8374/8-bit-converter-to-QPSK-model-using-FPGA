@@ -32,7 +32,7 @@ entity fsm is
 end fsm;
 
 architecture behavioral of fsm is
-    type state_type is (IDLE, WAIT_RX_DV, PROCESSING, WRITE_REG, READ_REG, TX, WAIT_TX_DONE, DONE);
+    type state_type is (IDLE, WAIT_RX_DV, PROC_START_A, PROC_WAIT_FLAGS, PROC_RESET_B, READ_REG, DONE);
     signal current_state, next_state : state_type;
     
     -- Button latch signal
@@ -57,18 +57,24 @@ begin
 
     -- Output assignments
     res_A   <= res_A_reg;
-    en_A    <= en_A_reg;
-    res_B   <= res_B_reg;
-    en_B    <= en_B_reg;
+    en_A    <= '1' when (current_state = PROC_WAIT_FLAGS and flag_B = '1') else '0';
+    res_B   <= '1' when (current_state = PROC_WAIT_FLAGS and flag_B = '1') else res_B_reg;
+    en_B    <= '0' when (current_state = PROC_WAIT_FLAGS and flag_A = '1' and flag_B = '1') else
+               '1' when ((current_state = PROC_START_A) or 
+                        (current_state = PROC_WAIT_FLAGS)) else '0';
     res_co  <= res_co_reg;
     en_co   <= en_co_reg;
     res_E   <= res_E_reg;
-    en_E    <= en_E_reg;
+    en_E    <= '1' when (current_state = READ_REG and flag_E = '0' and 
+                        o_TX_Active = '0') else '0';
     res_D   <= res_D_reg;
-    en_D    <= en_D_reg;
+    en_D    <= '1' when (flag_co = '1' and flag_D = '0' and 
+                        (current_state = PROC_WAIT_FLAGS or current_state = PROC_RESET_B)) else '0';
     res_re  <= res_re_reg;
-    en_re   <= en_re_reg;
-    i_TX_DV <= i_TX_DV_reg;
+    en_re   <= '1' when (flag_co = '1' and flag_D = '0' and 
+                        (current_state = PROC_WAIT_FLAGS or current_state = PROC_RESET_B)) else '0';
+    i_TX_DV <= '1' when (current_state = READ_REG and flag_E = '0' and 
+                        o_TX_Active = '0') else '0';
 
     -- checked
     process(clk)
@@ -100,69 +106,40 @@ begin
         end if;
     end process;
 
-    -- Next state and output logic
-    process(current_state, o_RX_DV, start_btn_latched, flag_co, flag_B, flag_D, flag_E, o_TX_Done, o_TX_Active)
+    -- Next state logic (combinational only)
+    process(current_state, o_RX_DV, start_btn_latched, flag_co, flag_B, flag_D, flag_E, o_TX_Done)
     begin
-        -- Default output values 
-        res_A_reg <= '0';
-        en_A_reg <= '0';
-        res_B_reg <= '0';
-        en_B_reg <= '0';
-        res_co_reg <= '0';
-        en_co_reg <= '0';
-        res_E_reg <= '0';
-        en_E_reg <= '0';
-        res_D_reg <= '0';
-        en_D_reg <= '0';
-        res_re_reg <= '0';
-        en_re_reg <= '0';
-        i_TX_DV_reg <= '0';
-
         case current_state is
-            -- IDLE: Wait for start button press, reset all modules
             when IDLE =>
-                res_A_reg <= '1';
-                res_B_reg <= '1';
-                res_co_reg <= '1';
-                res_D_reg <= '1';
-                res_E_reg <= '1';
-                if start_btn_latched = '1' then -- starting process
-                    next_state <= WAIT_RX_DV; -- Move to WAIT_RX_DV state
+                if start_btn_latched = '1' then
+                    next_state <= WAIT_RX_DV;
+                else
+                    next_state <= IDLE;
                 end if;
 
             when WAIT_RX_DV => 
                 if o_RX_DV = '1' then
-                    next_state <= PROCESSING;
+                    next_state <= PROC_START_A;
                 else
                     next_state <= WAIT_RX_DV;
                 end if; 
-
-            -- PROCESSING: Enable modules A, B, and CO, wait for CO flag
-            when PROCESSING =>
-                en_A_reg <= '1'; 
-                en_B_reg <= '1';
-                en_co_reg <= '1';
-                if flag_co = '1' then -- first output from CORDIC is ready
-                    en_D_reg <= '1'; -- Enable register write/counter
-                    en_re_reg <= '1'; -- Enable register file write
-                end if;
-                -- Only move to WRITE_REG when all symbols/angles are done
-                if flag_D = '1' then -- write to register done
+            
+            when PROC_START_A =>
+                next_state <= PROC_WAIT_FLAGS;
+                
+            when PROC_WAIT_FLAGS =>
+                if flag_D = '1' then
                     next_state <= READ_REG;
+                elsif flag_B = '1' then
+                    next_state <= PROC_RESET_B;
                 else
-                    next_state <= PROCESSING;
+                    next_state <= PROC_WAIT_FLAGS;
                 end if;
+            
+            when PROC_RESET_B =>
+                next_state <= PROC_START_A;
 
-            -- READ_REG: Enable module E, wait for E flag
             when READ_REG =>
-                en_E_reg <= '1';
-                -- Only pulse TX trigger for one clock when transmitter is not busy
-                if o_TX_Active = '0' then
-                    i_TX_DV_reg <= '1';    -- Pulse TX for one clock
-                else
-                    i_TX_DV_reg <= '0';    -- Keep low otherwise
-                end if;
-                -- Move to DONE when all data sent
                 if flag_E = '1' and o_TX_Done = '1' then
                     next_state <= DONE;
                 else
@@ -170,15 +147,116 @@ begin
                 end if;
 
             when DONE =>
-                if reset_btn = '0' then  -- reset button pressed
-                    next_state <= IDLE; -- Go to IDLE state
-                else
-                    next_state <= DONE; -- Stay in DONE state
-                end if;
+                next_state <= DONE;
 
             when others =>
                 next_state <= IDLE;
         end case;
+    end process;
+
+    -- Output register logic (synchronous)
+    process(clk)
+    begin
+        if rising_edge(clk) then
+            if reset_btn = '0' then
+                -- Reset semua output
+                res_A_reg <= '1';
+                en_A_reg <= '0';
+                res_B_reg <= '1';
+                en_B_reg <= '0';
+                res_co_reg <= '1';
+                en_co_reg <= '0';
+                res_E_reg <= '1';
+                en_E_reg <= '0';
+                res_D_reg <= '1';
+                en_D_reg <= '0';
+                res_re_reg <= '1';
+                en_re_reg <= '0';
+                i_TX_DV_reg <= '0';
+            else
+                -- Default: semua reset = 0, enable = 0
+                res_A_reg <= '0';
+                en_A_reg <= '0';
+                res_B_reg <= '0';
+                en_B_reg <= '0';
+                res_co_reg <= '0';
+                en_co_reg <= '0';
+                res_E_reg <= '0';
+                en_E_reg <= '0';
+                res_D_reg <= '0';
+                en_D_reg <= '0';
+                res_re_reg <= '0';
+                en_re_reg <= '0';
+                i_TX_DV_reg <= '0';
+
+                case current_state is
+                    when IDLE =>
+                        -- Reset semua module di IDLE
+                        res_A_reg <= '1';
+                        res_B_reg <= '1';
+                        res_co_reg <= '1';
+                        res_D_reg <= '1';
+                        res_E_reg <= '1';
+                        res_re_reg <= '1';
+
+                    when WAIT_RX_DV =>
+                        -- Tetap reset sambil tunggu RX
+                        res_A_reg <= '1';
+                        res_B_reg <= '1';
+                        res_co_reg <= '1';
+                        res_D_reg <= '1';
+                        res_E_reg <= '1';
+                        res_re_reg <= '1';
+                    
+                    when PROC_START_A =>
+                        -- en_B sekarang kombinasional, hapus dari sini
+                        en_co_reg <= '1';
+                        
+                    when PROC_WAIT_FLAGS =>
+                        -- en_B sekarang kombinasional, hapus dari sini
+                        
+                        -- en_co sampai flag_D=1
+                        if flag_D = '0' then
+                            en_co_reg <= '1';
+                        end if;
+                    
+                    when PROC_RESET_B =>
+                        -- res_B dan en_B sekarang kombinasional, hapus dari sini
+                        
+                        -- CORDIC tetap jalan sampai flag_D=1
+                        if flag_D = '0' then
+                            en_co_reg <= '1';
+                        end if;
+                        
+                        -- en_D dan en_re sekarang kombinasional, hapus dari sini
+
+                    when READ_REG =>
+                        -- en_E sekarang kombinasional, hapus dari sini
+                        
+                        -- TX trigger
+                        if o_TX_Active = '0' then
+                            i_TX_DV_reg <= '1';
+                        end if;
+
+                    when DONE =>
+                        -- Semua idle, reset semua module
+                        res_A_reg <= '1';
+                        res_B_reg <= '1';
+                        res_co_reg <= '1';
+                        res_D_reg <= '1';
+                        res_E_reg <= '1';
+                        res_re_reg <= '1';
+
+                    when others =>
+                        res_A_reg <= '1';
+                        res_B_reg <= '1';
+                        res_co_reg <= '1';
+                        res_D_reg <= '1';
+                        res_E_reg <= '1';
+                        res_re_reg <= '1';
+                end case;
+            end if;
+        end if;
     end process;
 
 end behavioral;
