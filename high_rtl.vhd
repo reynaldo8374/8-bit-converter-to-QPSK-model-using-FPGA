@@ -65,7 +65,7 @@ begin
 
     -- UART RX
     uart_rx_inst: entity work.UART_RX
-        generic map (g_CLKS_PER_BIT => 869) -- Set as needed
+        generic map (g_CLKS_PER_BIT => 868) -- Set as needed
         port map (
             i_Clk       => clk,
             i_RX_Serial => i_RX_Serial,
@@ -75,7 +75,7 @@ begin
 
     -- UART TX
     uart_tx_inst: entity work.UART_TX
-        generic map (g_CLKS_PER_BIT => 869) -- Set as needed
+        generic map (g_CLKS_PER_BIT => 868) -- Set as needed
         port map (
             i_Clk       => clk,
             i_TX_DV     => tx_dv,
