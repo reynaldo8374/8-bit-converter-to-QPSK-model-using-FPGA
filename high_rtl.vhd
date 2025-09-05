@@ -204,9 +204,9 @@ begin
     tx_data <= std_logic_vector(regfile_data_out);
 
     -- LED RX aktif: menyala saat RX_DV high
-    rx_led <= rx_dv;
+    rx_led <= not(rx_dv);
 
     -- LED TX aktif: menyala saat TX aktif
-    tx_led <= tx_active;
+    tx_led <= not(tx_active);
 
 end structural;
