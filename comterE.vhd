@@ -13,7 +13,7 @@ entity comterE is
 end comterE;
 
 architecture rtl of comterE is
-    constant COMP_VAL: unsigned(8 downto 0) := to_unsigned(360, 9);
+    constant COMP_VAL: unsigned(8 downto 0) := to_unsigned(359, 9);
     signal count : unsigned(8 downto 0) := (others => '0');
 begin
     process(clk, rst)
