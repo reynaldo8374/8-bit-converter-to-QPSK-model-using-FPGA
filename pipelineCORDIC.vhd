@@ -84,16 +84,17 @@ begin
             elsif enable = '1' then
                 case quadrant is
                     when "00" | "11" =>
-                        X(0) <= "01001101111010111"; -- Using precise 1/K value: 39795
+                        -- Kecilkan dari 39795 ke 9948 (dibagi 4)
+                        X(0) <= "00010011011110101"; -- 9948 ≈ 39795/4
                         Y(0) <= (others => '0');
                         Z(0) <= angle;
                     when "01" =>
                         X(0) <= (others => '0');
-                        Y(0) <= "01001101111010111"; -- Value: 39795
+                        Y(0) <= "00010011011110101"; -- 9948
                         Z(0) <= "00" & angle(29 downto 0);
                     when "10" =>
                         X(0) <= (others => '0');
-                        Y(0) <= "10110010000101001"; -- Value: -39795
+                        Y(0) <= "11101100100001011"; -- -9948
                         Z(0) <= "11" & angle(29 downto 0);
                     when others => 
                         X(0) <= (others => '0');
