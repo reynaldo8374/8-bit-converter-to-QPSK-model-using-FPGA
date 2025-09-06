@@ -28,7 +28,6 @@ The VHDL code was synthesized into an RTL (Register-Transfer Level) schematic, w
 ### Pin Assignment
 The top-level ports of the design were mapped to the physical pins of the FPGA for hardware implementation.
 
-![FPGA Pin IO](visual/PIN%20IO.jpg)
 ![FPGA Pin List](visual/Pin%20List.png)
 
 **Note on I/O Pins:**
@@ -41,3 +40,19 @@ The top-level ports of the design were mapped to the physical pins of the FPGA f
 This design is a fundamental building block for digital communication systems. To realize a true analog QPSK signal, the digital output from the FPGA should be connected to a Digital-to-Analog Converter (DAC), followed by a low-pass filter to smooth the signal. The resulting analog waveform demonstrates the characteristic phase shifts of QPSK modulation.
 
 ![Example QPSK Signal](visual/TB_QPSK_1.webp)
+
+## 6. Next Steps
+
+The next progress for this project is to deploy the design onto a physical FPGA board to test and verify its functionality in real-world conditions. This will involve:
+
+- **FPGA Synthesis and Implementation**: Using the FPGA vendor's tools to synthesize the VHDL code and implement the design on the FPGA.
+- **Hardware Testing**: Verifying the functionality of the deployed design on the FPGA, ensuring that the QPSK modulation works as intended with real data.
+- **Performance Optimization**: Based on the hardware test results, further optimizations may be made to the design to improve performance, such as adjusting the clock speed, optimizing the CORDIC algorithm implementation, or refining the FSM control logic.
+- **Integration with DAC**: Connecting the FPGA output to a DAC and testing the complete signal chain to ensure the generated analog QPSK signal meets the required specifications.
+
+Future work may also explore the implementation of additional features, such as:
+- **Adaptive Filtering**: To improve signal quality and reduce the impact of noise and interference.
+- **Error Correction**: Implementing forward error correction (FEC) to enhance the reliability of data transmission.
+- **Higher Order Modulation Schemes**: Extending the design to support 16-QAM or 64-QAM for higher data rate transmission.
+
+By completing these steps, the project will advance towards a fully functional and versatile digital communication system on FPGA, capable of robust and high-speed data transmission using advanced modulation techniques.
