@@ -16,7 +16,7 @@ The hardware design is composed of several interconnected modules, orchestrated 
 
 The design was verified using ModelSim. The simulation waveform below shows the successful generation of the final serial output (`o_TX_Serial`) based on the input data and control signals.
 
-![ModelSim Waveform](visual/ModelSIM Result.png)
+![ModelSim Waveform](visual/ModelSIM%20Result.png)
 
 ## 4. FPGA Implementation
 
@@ -29,6 +29,12 @@ The VHDL code was synthesized into an RTL (Register-Transfer Level) schematic, w
 The top-level ports of the design were mapped to the physical pins of the FPGA for hardware implementation.
 
 ![FPGA Pin IO](visual/PIN%20IO.jpg)
+![FPGA Pin List](visual/Pin%20List.png)
+
+**Note on I/O Pins:**
+- **`rx_led`**: This LED will light up when the UART receiver has successfully received a byte and its data valid (`rx_dv`) signal is active.
+- **`tx_led`**: This LED will light up whenever the UART transmitter is actively sending data (`tx_active` is high).
+- The LED logic is active-low, as seen in the `high_rtl.vhd` file.
 
 ## 5. Application and Realization
 
