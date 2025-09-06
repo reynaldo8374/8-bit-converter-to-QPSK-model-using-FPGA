@@ -16,15 +16,21 @@ end comterB;
 architecture rtl of comterB is
     constant ADD_VAL  : unsigned(31 downto 0) := "00000010110110000010110110000010"; -- 4 deg step
     constant COMP_VAL : unsigned(31 downto 0) := "11111111111111111111111110110100"; -- 360 deg
-    signal count : unsigned(31 downto 0) := (others => '0');
+    signal count      : unsigned(31 downto 0) := (others => '0');
 begin
+    -- Proses sinkron dengan reset asinkron
     process(clk, rst)
     begin
         if rst = '1' then
             count <= (others => '0');
         elsif rising_edge(clk) then
             if enable = '1' then
-                count <= count + ADD_VAL;
+                -- Jika clock sebelumnya reset aktif, langsung lompat ke ADD_VAL
+                if rst = '1' then
+                    count <= ADD_VAL;
+                else
+                    count <= count + ADD_VAL;
+                end if;
             end if;
         end if;
     end process;
